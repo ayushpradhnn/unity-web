@@ -1,261 +1,339 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Scanner;
 
-public class Main {
+public class Main extends JFrame {
+    private EventDAO eventDAO;
+    private ParticipantDAO participantDAO;
+    private VenueDAO venueDAO;
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        EventDAO eventDAO = new EventDAO();
-        ParticipantDAO participantDAO = new ParticipantDAO();
-        VenueDAO venueDAO = new VenueDAO();
+    public Main() {
+        eventDAO = new EventDAO();
+        participantDAO = new ParticipantDAO();
+        venueDAO = new VenueDAO();
 
-        while (true) {
-            System.out.println("\nEvent Management System");
-            System.out.println("1. Add Event");
-            System.out.println("2. View All Events");
-            System.out.println("3. Update Event");
-            System.out.println("4. Delete Event");
-            System.out.println("5. Add Participant");
-            System.out.println("6. View All Participants");
-            System.out.println("7. Update Participant");
-            System.out.println("8. Delete Participant");
-            System.out.println("9. Add Venue");
-            System.out.println("10. View All Venues");
-            System.out.println("11. Update Venue");
-            System.out.println("12. Delete Venue");
-            System.out.println("0. Exit");
-            System.out.print("Enter your choice: ");
-            int choice = scanner.nextInt();
-            scanner.nextLine(); // Consume newline
+        setTitle("UNITY-WEB");
+        setSize(400, 300);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new GridLayout(4, 1));
 
+        JButton eventsButton = new JButton("Events");
+        JButton participantsButton = new JButton("Participants");
+        JButton venuesButton = new JButton("Venues");
+        JButton exitButton = new JButton("Exit");
+
+        eventsButton.addActionListener(e -> showEventOptions());
+        participantsButton.addActionListener(e -> showParticipantOptions());
+        venuesButton.addActionListener(e -> showVenueOptions());
+        exitButton.addActionListener(e -> System.exit(0));
+
+        add(eventsButton);
+        add(participantsButton);
+        add(venuesButton);
+        add(exitButton);
+    }
+
+    private void showEventOptions() {
+        String[] options = {"Add Event", "View All Events", "Update Event", "Delete Event"};
+        int choice = JOptionPane.showOptionDialog(this, "Select an option:", "Event Options",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+
+        switch (choice) {
+            case 0 -> addEventUI();
+            case 1 -> viewAllEventsUI();
+            case 2 -> updateEventUI();
+            case 3 -> deleteEventUI();
+        }
+    }
+
+    private void showParticipantOptions() {
+        String[] options = {"Add Participant", "View All Participants", "Update Participant", "Delete Participant"};
+        int choice = JOptionPane.showOptionDialog(this, "Select an option:", "Participant Options",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+
+        switch (choice) {
+            case 0 -> addParticipantUI();
+            case 1 -> viewAllParticipantsUI();
+            case 2 -> updateParticipantUI();
+            case 3 -> deleteParticipantUI();
+        }
+    }
+
+    private void showVenueOptions() {
+        String[] options = {"Add Venue", "View All Venues", "Update Venue", "Delete Venue"};
+        int choice = JOptionPane.showOptionDialog(this, "Select an option:", "Venue Options",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, options, options[0]);
+
+        switch (choice) {
+            case 0 -> addVenueUI();
+            case 1 -> viewAllVenuesUI();
+            case 2 -> updateVenueUI();
+            case 3 -> deleteVenueUI();
+        }
+    }
+
+    // Event methods
+    private void addEventUI() {
+        JTextField nameField = new JTextField();
+        JTextField dateField = new JTextField();
+        JTextField venueIdField = new JTextField();
+
+        Object[] message = {
+                "Event Name:", nameField,
+                "Event Date (YYYY-MM-DD):", dateField,
+                "Venue ID:", venueIdField
+        };
+
+        int option = JOptionPane.showConfirmDialog(this, message, "Add Event", JOptionPane.OK_CANCEL_OPTION);
+        if (option == JOptionPane.OK_OPTION) {
             try {
-                switch (choice) {
-                    case 1:
-                        addEvent(scanner, eventDAO);
-                        break;
-                    case 2:
-                        viewAllEvents(eventDAO);
-                        break;
-                    case 3:
-                        updateEvent(scanner, eventDAO);
-                        break;
-                    case 4:
-                        deleteEvent(scanner, eventDAO);
-                        break;
-                    case 5:
-                        addParticipant(scanner, participantDAO);
-                        break;
-                    case 6:
-                        viewAllParticipants(participantDAO);
-                        break;
-                    case 7:
-                        updateParticipant(scanner, participantDAO);
-                        break;
-                    case 8:
-                        deleteParticipant(scanner, participantDAO);
-                        break;
-                    case 9:
-                        addVenue(scanner, venueDAO);
-                        break;
-                    case 10:
-                        viewAllVenues(venueDAO);
-                        break;
-                    case 11:
-                        updateVenue(scanner, venueDAO);
-                        break;
-                    case 12:
-                        deleteVenue(scanner, venueDAO);
-                        break;
-                    case 0:
-                        System.out.println("Exiting...");
-                        return;
-                    default:
-                        System.out.println("Invalid choice. Please try again.");
+                String eventName = nameField.getText();
+                String eventDate = dateField.getText();
+                int venueId = Integer.parseInt(venueIdField.getText());
+
+                Event event = new Event(eventName, eventDate, venueId);
+                eventDAO.addEvent(event);
+                JOptionPane.showMessageDialog(this, "Event added successfully with ID: " + event.getEventId());
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void viewAllEventsUI() {
+        try {
+            StringBuilder eventsList = new StringBuilder("All Events:\n");
+            for (Event event : eventDAO.getAllEvents()) {
+                eventsList.append(event.toString()).append("\n");
+            }
+            JOptionPane.showMessageDialog(this, eventsList.toString());
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+    }
+
+    private void updateEventUI() {
+        String eventId = JOptionPane.showInputDialog(this, "Enter Event ID to update:");
+        if (eventId != null && !eventId.isEmpty()) {
+            try {
+                Event event = eventDAO.getEventById(Integer.parseInt(eventId));
+                if (event != null) {
+                    JTextField nameField = new JTextField(event.getEventName());
+                    JTextField dateField = new JTextField(event.getEventDate());
+                    JTextField venueIdField = new JTextField(String.valueOf(event.getVenueId()));
+
+                    Object[] message = {
+                            "Event Name:", nameField,
+                            "Event Date (YYYY-MM-DD):", dateField,
+                            "Venue ID:", venueIdField
+                    };
+
+                    int option = JOptionPane.showConfirmDialog(this, message, "Update Event", JOptionPane.OK_CANCEL_OPTION);
+                    if (option == JOptionPane.OK_OPTION) {
+                        event.setEventName(nameField.getText());
+                        event.setEventDate(dateField.getText());
+                        event.setVenueId(Integer.parseInt(venueIdField.getText()));
+                        eventDAO.updateEvent(event);
+                        JOptionPane.showMessageDialog(this, "Event updated successfully!");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Event not found.");
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
             }
         }
     }
 
-    // Methods for handling events
-    private static void addEvent(Scanner scanner, EventDAO eventDAO) throws SQLException {
-        System.out.print("Enter event name: ");
-        String eventName = scanner.nextLine();
-        System.out.print("Enter event date (YYYY-MM-DD): ");
-        String eventDate = scanner.nextLine();
-        System.out.print("Enter venue ID: ");
-        int venueId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-
-        Event event = new Event(eventName, eventDate, venueId);
-        eventDAO.addEvent(event);
-        System.out.println("Event added successfully with ID: " + event.getEventId());
-    }
-
-    private static void viewAllEvents(EventDAO eventDAO) throws SQLException {
-        List<Event> events = eventDAO.getAllEvents();
-        for (Event event : events) {
-            System.out.println(event);
+    private void deleteEventUI() {
+        String eventId = JOptionPane.showInputDialog(this, "Enter Event ID to delete:");
+        if (eventId != null && !eventId.isEmpty()) {
+            try {
+                eventDAO.deleteEvent(Integer.parseInt(eventId));
+                JOptionPane.showMessageDialog(this, "Event deleted successfully.");
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            }
         }
     }
 
-    private static void updateEvent(Scanner scanner, EventDAO eventDAO) throws SQLException {
-        System.out.print("Enter event ID to update: ");
-        int eventId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+    // Participant methods
+    private void addParticipantUI() {
+        JTextField nameField = new JTextField();
+        JTextField emailField = new JTextField();
+        JTextField eventIdField = new JTextField();
 
-        Event event = eventDAO.getEventById(eventId);
-        if (event != null) {
-            System.out.print("Enter new event name (leave blank to keep current: " + event.getEventName() + "): ");
-            String eventName = scanner.nextLine();
-            if (!eventName.isBlank()) {
-                event.setEventName(eventName);
+        Object[] message = {
+                "Participant Name:", nameField,
+                "Participant Email:", emailField,
+                "Event ID:", eventIdField
+        };
+
+        int option = JOptionPane.showConfirmDialog(this, message, "Add Participant", JOptionPane.OK_CANCEL_OPTION);
+        if (option == JOptionPane.OK_OPTION) {
+            try {
+                String name = nameField.getText();
+                String email = emailField.getText();
+                int eventId = Integer.parseInt(eventIdField.getText());
+
+                Participant participant = new Participant(name, email, eventId);
+                participantDAO.addParticipant(participant);
+                JOptionPane.showMessageDialog(this, "Participant added successfully with ID: " + participant.getParticipantId());
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
             }
-            System.out.print("Enter new event date (YYYY-MM-DD) (leave blank to keep current: " + event.getEventDate() + "): ");
-            String eventDate = scanner.nextLine();
-            if (!eventDate.isBlank()) {
-                event.setEventDate(eventDate);
-            }
-            System.out.print("Enter new venue ID (leave blank to keep current: " + event.getVenueId() + "): ");
-            String venueInput = scanner.nextLine();
-            if (!venueInput.isBlank()) {
-                int venueId = Integer.parseInt(venueInput);
-                event.setVenueId(venueId);
-            }
-            eventDAO.updateEvent(event);
-            System.out.println("Event updated successfully!");
-        } else {
-            System.out.println("Event not found.");
         }
     }
 
-    private static void deleteEvent(Scanner scanner, EventDAO eventDAO) throws SQLException {
-        System.out.print("Enter event ID to delete: ");
-        int eventId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-        eventDAO.deleteEvent(eventId);
-        System.out.println("Event deleted successfully.");
-    }
-
-    // Methods for handling participants
-    private static void addParticipant(Scanner scanner, ParticipantDAO participantDAO) throws SQLException {
-        System.out.print("Enter participant name: ");
-        String name = scanner.nextLine();
-        System.out.print("Enter participant email: ");
-        String email = scanner.nextLine();
-        System.out.print("Enter event ID: ");
-        int eventId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-
-        Participant participant = new Participant(name, email, eventId);
-        participantDAO.addParticipant(participant);
-        System.out.println("Participant added successfully with ID: " + participant.getParticipantId());
-    }
-
-    private static void viewAllParticipants(ParticipantDAO participantDAO) throws SQLException {
-        List<Participant> participants = participantDAO.getAllParticipants();
-        for (Participant participant : participants) {
-            System.out.println(participant);
+    private void viewAllParticipantsUI() {
+        try {
+            StringBuilder participantsList = new StringBuilder("All Participants:\n");
+            for (Participant participant : participantDAO.getAllParticipants()) {
+                participantsList.append(participant.toString()).append("\n");
+            }
+            JOptionPane.showMessageDialog(this, participantsList.toString());
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
         }
     }
 
-    private static void updateParticipant(Scanner scanner, ParticipantDAO participantDAO) throws SQLException {
-        System.out.print("Enter participant ID to update: ");
-        int participantId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+    private void updateParticipantUI() {
+        String participantId = JOptionPane.showInputDialog(this, "Enter Participant ID to update:");
+        if (participantId != null && !participantId.isEmpty()) {
+            try {
+                Participant participant = participantDAO.getParticipantById(Integer.parseInt(participantId));
+                if (participant != null) {
+                    JTextField nameField = new JTextField(participant.getName());
+                    JTextField emailField = new JTextField(participant.getEmail());
+                    JTextField eventIdField = new JTextField(String.valueOf(participant.getEventId()));
 
-        Participant participant = participantDAO.getParticipantById(participantId);
-        if (participant != null) {
-            System.out.print("Enter new participant name (leave blank to keep current: " + participant.getName() + "): ");
-            String name = scanner.nextLine();
-            if (!name.isBlank()) {
-                participant.setName(name);
+                    Object[] message = {
+                            "Participant Name:", nameField,
+                            "Participant Email:", emailField,
+                            "Event ID:", eventIdField
+                    };
+
+                    int option = JOptionPane.showConfirmDialog(this, message, "Update Participant", JOptionPane.OK_CANCEL_OPTION);
+                    if (option == JOptionPane.OK_OPTION) {
+                        participant.setName(nameField.getText());
+                        participant.setEmail(emailField.getText());
+                        participant.setEventId(Integer.parseInt(eventIdField.getText()));
+                        participantDAO.updateParticipant(participant);
+                        JOptionPane.showMessageDialog(this, "Participant updated successfully!");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Participant not found.");
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
             }
-            System.out.print("Enter new email (leave blank to keep current: " + participant.getEmail() + "): ");
-            String email = scanner.nextLine();
-            if (!email.isBlank()) {
-                participant.setEmail(email);
-            }
-            System.out.print("Enter new event ID (leave blank to keep current: " + participant.getEventId() + "): ");
-            String eventInput = scanner.nextLine();
-            if (!eventInput.isBlank()) {
-                int eventId = Integer.parseInt(eventInput);
-                participant.setEventId(eventId);
-            }
-            participantDAO.updateParticipant(participant);
-            System.out.println("Participant updated successfully!");
-        } else {
-            System.out.println("Participant not found.");
         }
     }
 
-    private static void deleteParticipant(Scanner scanner, ParticipantDAO participantDAO) throws SQLException {
-        System.out.print("Enter participant ID to delete: ");
-        int participantId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-        participantDAO.deleteParticipant(participantId);
-        System.out.println("Participant deleted successfully.");
-    }
-
-    // Methods for handling venues
-    private static void addVenue(Scanner scanner, VenueDAO venueDAO) throws SQLException {
-        System.out.print("Enter venue name: ");
-        String venueName = scanner.nextLine();
-        System.out.print("Enter venue location: ");
-        String location = scanner.nextLine();
-        System.out.print("Enter venue capacity: ");
-        int capacity = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-
-        Venue venue = new Venue(venueName, location, capacity);
-        venueDAO.addVenue(venue);
-        System.out.println("Venue added successfully with ID: " + venue.getVenueId());
-    }
-
-    private static void viewAllVenues(VenueDAO venueDAO) throws SQLException {
-        List<Venue> venues = venueDAO.getAllVenues();
-        for (Venue venue : venues) {
-            System.out.println(venue);
+    private void deleteParticipantUI() {
+        String participantId = JOptionPane.showInputDialog(this, "Enter Participant ID to delete:");
+        if (participantId != null && !participantId.isEmpty()) {
+            try {
+                participantDAO.deleteParticipant(Integer.parseInt(participantId));
+                JOptionPane.showMessageDialog(this, "Participant deleted successfully.");
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            }
         }
     }
 
-    private static void updateVenue(Scanner scanner, VenueDAO venueDAO) throws SQLException {
-        System.out.print("Enter venue ID to update: ");
-        int venueId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
+    // Venue methods
+    private void addVenueUI() {
+        JTextField nameField = new JTextField();
+        JTextField locationField = new JTextField();
+        JTextField capacityField = new JTextField();
 
-        Venue venue = venueDAO.getVenueById(venueId);
-        if (venue != null) {
-            System.out.print("Enter new venue name (leave blank to keep current: " + venue.getVenueName() + "): ");
-            String venueName = scanner.nextLine();
-            if (!venueName.isBlank()) {
-                venue.setVenueName(venueName);
+        Object[] message = {
+                "Venue Name:", nameField,
+                "Location:", locationField,
+                "Capacity:", capacityField
+        };
+
+        int option = JOptionPane.showConfirmDialog(this, message, "Add Venue", JOptionPane.OK_CANCEL_OPTION);
+        if (option == JOptionPane.OK_OPTION) {
+            try {
+                String name = nameField.getText();
+                String location = locationField.getText();
+                int capacity = Integer.parseInt(capacityField.getText());
+
+                Venue venue = new Venue(name, location, capacity);
+                venueDAO.addVenue(venue);
+                JOptionPane.showMessageDialog(this, "Venue added successfully with ID: " + venue.getVenueId());
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
             }
-            System.out.print("Enter new location (leave blank to keep current: " + venue.getLocation() + "): ");
-            String location = scanner.nextLine();
-            if (!location.isBlank()) {
-                venue.setLocation(location);
-            }
-            System.out.print("Enter new capacity (leave blank to keep current: " + venue.getCapacity() + "): ");
-            String capacityInput = scanner.nextLine();
-            if (!capacityInput.isBlank()) {
-                int capacity = Integer.parseInt(capacityInput);
-                venue.setCapacity(capacity);
-            }
-            venueDAO.updateVenue(venue);
-            System.out.println("Venue updated successfully!");
-        } else {
-            System.out.println("Venue not found.");
         }
     }
 
-    private static void deleteVenue(Scanner scanner, VenueDAO venueDAO) throws SQLException {
-        System.out.print("Enter venue ID to delete: ");
-        int venueId = scanner.nextInt();
-        scanner.nextLine(); // Consume newline
-        venueDAO.deleteVenue(venueId);
-        System.out.println("Venue deleted successfully.");
+    private void viewAllVenuesUI() {
+        try {
+            StringBuilder venuesList = new StringBuilder("All Venues:\n");
+            for (Venue venue : venueDAO.getAllVenues()) {
+                venuesList.append(venue.toString()).append("\n");
+            }
+            JOptionPane.showMessageDialog(this, venuesList.toString());
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+        }
+    }
+
+    private void updateVenueUI() {
+        String venueId = JOptionPane.showInputDialog(this, "Enter Venue ID to update:");
+        if (venueId != null && !venueId.isEmpty()) {
+            try {
+                Venue venue = venueDAO.getVenueById(Integer.parseInt(venueId));
+                if (venue != null) {
+                    JTextField nameField = new JTextField(venue.getVenueName());
+                    JTextField locationField = new JTextField(venue.getLocation());
+                    JTextField capacityField = new JTextField(String.valueOf(venue.getCapacity()));
+
+                    Object[] message = {
+                            "Venue Name:", nameField,
+                            "Location:", locationField,
+                            "Capacity:", capacityField
+                    };
+
+                    int option = JOptionPane.showConfirmDialog(this, message, "Update Venue", JOptionPane.OK_CANCEL_OPTION);
+                    if (option == JOptionPane.OK_OPTION) {
+                        venue.setVenueName(nameField.getText());
+                        venue.setLocation(locationField.getText());
+                        venue.setCapacity(Integer.parseInt(capacityField.getText()));
+                        venueDAO.updateVenue(venue);
+                        JOptionPane.showMessageDialog(this, "Venue updated successfully!");
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "Venue not found.");
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            }
+        }
+    }
+
+    private void deleteVenueUI() {
+        String venueId = JOptionPane.showInputDialog(this, "Enter Venue ID to delete:");
+        if (venueId != null && !venueId.isEmpty()) {
+            try {
+                venueDAO.deleteVenue(Integer.parseInt(venueId));
+                JOptionPane.showMessageDialog(this, "Venue deleted successfully.");
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            Main mainUI = new Main();
+            mainUI.setVisible(true);
+        });
     }
 }
